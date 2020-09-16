@@ -154,6 +154,10 @@ function dragula (initialContainers, options) {
   }
 
   function startBecauseMouseMoved (e) {
+    
+    var clientX = getCoord('clientX', e);
+    var clientY = getCoord('clientY', e);
+
     if (!_grabbed) {
       return;
     }
@@ -165,9 +169,6 @@ function dragula (initialContainers, options) {
     if (e.clientX !== void 0 && e.clientX === _moveX && e.clientY !== void 0 && e.clientY === _moveY) {
       return;
     }
-
-    var clientX = getCoord('clientX', e);
-    var clientY = getCoord('clientY', e);
 
     if (o.ignoreInputTextSelection) {
       var elementBehindCursor = doc.elementFromPoint(clientX, clientY);
