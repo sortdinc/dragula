@@ -39,6 +39,7 @@ function dragula (initialContainers, options) {
   if (o.direction === void 0) { o.direction = 'vertical'; }
   if (o.ignoreInputTextSelection === void 0) { o.ignoreInputTextSelection = true; }
   if (o.mirrorContainer === void 0) { o.mirrorContainer = doc.body; }
+  if (o.deadzone === void 0) { o.deadzone = 0; }
 
   var drake = emitter({
     containers: o.containers,
@@ -123,17 +124,31 @@ function dragula (initialContainers, options) {
       release({});
       return; // when text is selected on an input and then dragged, mouseup doesn't fire. this is our only hope
     }
+    
     // truthy check fixes #239, equality fixes #207
     if (e.clientX !== void 0 && e.clientX === _moveX && e.clientY !== void 0 && e.clientY === _moveY) {
       return;
     }
+
+    var clientX = getCoord('clientX', e);
+    var clientY = getCoord('clientY', e);
+
     if (o.ignoreInputTextSelection) {
-      var clientX = getCoord('clientX', e);
-      var clientY = getCoord('clientY', e);
       var elementBehindCursor = doc.elementFromPoint(clientX, clientY);
       if (isInput(elementBehindCursor)) {
         return;
       }
+    }
+
+    var grabTravelDistance = distance({
+      x: _moveX,
+      y: _moveY
+    }, {
+      x: clientX,
+      y: clientY
+    });
+    if (grabTravelDistance <= o.deadzone) {
+      return;
     }
 
     var grabbed = _grabbed; // call to end() unsets _grabbed
@@ -256,7 +271,11 @@ function dragula (initialContainers, options) {
       parent.removeChild(_item);
     }
     if (isInitialPlacement(target)) {
-      drake.emit('cancel', item, _source, _source);
+      if (item.ignoreInitialPlacement && item.ignoreInitialPlacement()) {
+        drake.emit('drop', item, target, _source, _currentSibling);
+      } else {
+        drake.emit('cancel', item, _source, _source);
+      }
     } else {
       drake.emit('drop', item, target, _source, _currentSibling);
     }
@@ -402,9 +421,11 @@ function dragula (initialContainers, options) {
       reference !== item &&
       reference !== nextEl(item)
     ) {
-      _currentSibling = reference;
+    _currentSibling = reference;
+    if (dropTarget) {
       dropTarget.insertBefore(item, reference);
-      drake.emit('shadow', item, dropTarget, _source);
+    }
+      drake.emit('shadow', item, dropTarget, _source, _currentSibling);
     }
     function moved (type) { drake.emit(type, item, _lastDropTarget, _source); }
     function over () { if (changed) { moved('over'); } }
@@ -518,6 +539,11 @@ function touchy (el, op, type, fn) {
   }
 }
 
+function distance(pt1, pt2) {
+  var dist2 = Math.pow(pt1.x - pt2.x, 2) + Math.pow(pt1.y - pt2.y, 2);
+  var dist = Math.sqrt(dist2);
+  return dist;
+}
 function whichMouseButton (e) {
   if (e.touches !== void 0) { return e.touches.length; }
   if (e.which !== void 0 && e.which !== 0) { return e.which; } // see https://github.com/bevacqua/dragula/issues/261
