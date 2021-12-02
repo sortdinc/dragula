@@ -310,7 +310,11 @@ function dragula (initialContainers, options) {
           parent.removeChild(_copy);
         }
       } else {
-        _source.insertBefore(item, _initialSibling);
+        if (_source.contains(_initialSibling)) {
+          _source.insertBefore(item, _initialSibling);
+        } else {
+          item.parentNode.removeChild(item);	// This will be the case for virtual scroll
+        }
       }
     }
     if (initial || reverts) {
@@ -422,10 +426,10 @@ function dragula (initialContainers, options) {
       reference !== item &&
       reference !== nextEl(item)
     ) {
-    _currentSibling = reference;
-    if (dropTarget) {
-      dropTarget.insertBefore(item, reference);
-    }
+      _currentSibling = reference;
+      if (dropTarget && dropTarget.contains(reference)) {	// Reference may not exist in virtual scroll
+        dropTarget.insertBefore(item, reference);
+      }
       drake.emit('shadow', item, dropTarget, _source, _currentSibling);
     }
     function moved (type) { drake.emit(type, item, _lastDropTarget, _source); }
