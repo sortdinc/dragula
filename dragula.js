@@ -310,7 +310,7 @@ function dragula (initialContainers, options) {
           parent.removeChild(_copy);
         }
       } else {
-        if (_source.contains(_initialSibling)) {
+        if (_initialSibling === null || _source.contains(_initialSibling)) {
           _source.insertBefore(item, _initialSibling);
         } else {
           item.parentNode.removeChild(item);	// This will be the case for virtual scroll
@@ -427,7 +427,7 @@ function dragula (initialContainers, options) {
       reference !== nextEl(item)
     ) {
       _currentSibling = reference;
-      if (dropTarget && dropTarget.contains(reference)) {	// Reference may not exist in virtual scroll
+      if (dropTarget && (reference === null || dropTarget.contains(reference))) {	// Reference may not exist in virtual scroll
         dropTarget.insertBefore(item, reference);
       }
       drake.emit('shadow', item, dropTarget, _source, _currentSibling);
