@@ -313,7 +313,7 @@ function dragula (initialContainers, options) {
         if (_initialSibling === null || _source.contains(_initialSibling)) {
           _source.insertBefore(item, _initialSibling);
         } else {
-          item.parentNode.removeChild(item);	// This will be the case for virtual scroll
+          item.remove();	// This will be the case for virtual scroll
         }
       }
     }
