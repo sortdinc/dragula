@@ -255,8 +255,9 @@ function dragula (initialContainers, options) {
     var item = _copy || _item;
     var clientX = getCoord('clientX', e) || 0;
     var clientY = getCoord('clientY', e) || 0;
+    var shiftKeyPressed = e && e.shiftKey || false;
     var elementBehindCursor = getElementBehindPoint(_mirror, clientX, clientY);
-    var dropTarget = findDropTarget(elementBehindCursor, clientX, clientY);
+    var dropTarget = findDropTarget(elementBehindCursor, clientX, clientY, shiftKeyPressed);
     if (dropTarget && ((_copy && o.copySortSource) || (!_copy || dropTarget !== _source))) {
       drop(item, dropTarget);
     } else if (o.removeOnSpill) {
@@ -355,7 +356,7 @@ function dragula (initialContainers, options) {
     return target === _source && sibling === _initialSibling;
   }
 
-  function findDropTarget (elementBehindCursor, clientX, clientY) {
+  function findDropTarget (elementBehindCursor, clientX, clientY, shiftKeyPressed) {
     var target = elementBehindCursor;
     while (target && !accepted()) {
       target = getParent(target);
@@ -369,7 +370,7 @@ function dragula (initialContainers, options) {
       }
 
       var immediate = getImmediateChild(target, elementBehindCursor);
-      var reference = getReference(target, immediate, clientX, clientY);
+      var reference = getReference(target, immediate, clientX, clientY, shiftKeyPressed);
       var initial = isInitialPlacement(target, reference);
       if (initial) {
         return true; // should always be able to drop it right back where it was
@@ -394,7 +395,8 @@ function dragula (initialContainers, options) {
 
     var item = _copy || _item;
     var elementBehindCursor = getElementBehindPoint(_mirror, clientX, clientY);
-    var dropTarget = findDropTarget(elementBehindCursor, clientX, clientY);
+    var shiftKeyPressed = e && e.shiftKey || false;
+    var dropTarget = findDropTarget(elementBehindCursor, clientX, clientY, shiftKeyPressed);
     var changed = dropTarget !== null && dropTarget !== _lastDropTarget;
     if (changed || dropTarget === null) {
       out();
@@ -411,7 +413,7 @@ function dragula (initialContainers, options) {
     var reference;
     var immediate = getImmediateChild(dropTarget, elementBehindCursor);
     if (immediate !== null) {
-      reference = getReference(dropTarget, immediate, clientX, clientY);
+      reference = getReference(dropTarget, immediate, clientX, clientY, shiftKeyPressed);
     } else if (o.revertOnSpill === true && !_copy) {
       reference = _initialSibling;
       dropTarget = _source;
@@ -481,7 +483,7 @@ function dragula (initialContainers, options) {
     return immediate;
   }
 
-  function getReference (dropTarget, target, x, y) {
+  function getReference (dropTarget, target, x, y, shiftKeyPressed) {
     var horizontal = o.direction === 'horizontal';
     var reference = target !== dropTarget ? inside() : outside();
     return reference;
@@ -495,7 +497,11 @@ function dragula (initialContainers, options) {
         el = dropTarget.children[i];
         rect = el.getBoundingClientRect();
         if (horizontal && (rect.left + rect.width / 2) > x) { return el; }
-        if (!horizontal && (rect.top + rect.height / 2) > y) { return el; }
+        if (shiftKeyPressed) {
+          if (!horizontal && (rect.top + rect.height) > y) { return el; }
+        } else {
+          if (!horizontal && (rect.top + rect.height / 2) > y) { return el; }
+        }
       }
       return null;
     }
@@ -505,7 +511,11 @@ function dragula (initialContainers, options) {
       if (horizontal) {
         return resolve(x > rect.left + getRectWidth(rect) / 2);
       }
-      return resolve(y > rect.top + getRectHeight(rect) / 2);
+      if (shiftKeyPressed) {
+      	return resolve(y > rect.top + getRectHeight(rect));
+      } else {
+        return resolve(y > rect.top + getRectHeight(rect) / 2);
+      }
     }
 
     function resolve (after) {
